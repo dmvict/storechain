@@ -45,7 +45,7 @@ fn main() -> Result<()> {
         auth_keeper,
         params_keeper,
         StoreChainParamsStoreKey::BaseApp,
-        |cfg| Handler::new(cfg),
+        Handler::new(),
         query_command_handler,
         tx_command_handler,
         get_router(),

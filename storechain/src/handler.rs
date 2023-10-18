@@ -1,5 +1,4 @@
 use gears::{
-    config::Config,
     types::context::{InitContext, TxContext},
     x::params::Keeper as ParamsKeeper,
 };
@@ -11,7 +10,6 @@ use database::Database;
 use gears::{error::AppError, types::context::QueryContext};
 
 use crate::{
-    config::AppConfig,
     genesis::GenesisState,
     message::Message,
     store_keys::{StoreChainParamsStoreKey, StoreChainStoreKey},
@@ -21,11 +19,11 @@ use crate::{
 pub struct Handler {
     bank_handler: bank::Handler<StoreChainStoreKey, StoreChainParamsStoreKey>,
     auth_handler: auth::Handler<StoreChainStoreKey, StoreChainParamsStoreKey>,
-    store_handler: bank::Handler<StoreKey>,
+    store_handler: st::Handler<StoreChainStoreKey>,
 }
 
 impl Handler {
-    pub fn new(_cfg: Config<AppConfig>) -> Handler {
+    pub fn new() -> Handler {
         let params_keeper = ParamsKeeper::new(StoreChainStoreKey::Params);
 
         let auth_keeper = auth::Keeper::new(
@@ -41,12 +39,12 @@ impl Handler {
             auth_keeper.clone(),
         );
 
-        let store_keeper = st::Keeper::new(StoreChainParamsStoreKey::Store);
+        let store_keeper = st::Keeper::new(StoreChainStoreKey::Store);
 
         Handler {
             bank_handler: bank::Handler::new(bank_keeper),
             auth_handler: auth::Handler::new(auth_keeper),
-            store_handler: store::Handler::new(store_keeper),
+            store_handler: st::Handler::new(store_keeper),
         }
     }
 }

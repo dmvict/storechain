@@ -1,10 +1,10 @@
 use bytes::Bytes;
 use ibc_proto::{google::protobuf::Any, protobuf::Protobuf};
-use proto_messages::cosmos::bank::v1beta1::MsgSend;
+use prost::Message as ProstMessage;
 use proto_types::AccAddress;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Message)]
+#[derive(Serialize, Deserialize, Clone, ProstMessage)]
 pub struct RawMsgKeyPair {
     #[prost(uint32, tag = "1")]
     pub id: u32,
@@ -16,6 +16,7 @@ pub struct RawMsgKeyPair {
     pub private_key: String,
 }
 
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct MsgKeyPair {
     pub id: u32,
@@ -24,7 +25,42 @@ pub struct MsgKeyPair {
     pub private_key: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, ProstMessage)]
+pub struct QueryAllMessagesRequestRaw {
+    #[prost(string, tag = "1")]
+    pub address: String,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct QueryAllMessagesRequest {
+    /// address is the address to query balances for.
+    pub address: proto_types::AccAddress,
+}
+
+impl TryFrom<QueryAllMessagesRequestRaw> for QueryAllMessagesRequest {
+    type Error = String;
+    fn try_from(src: QueryAllMessagesRequestRaw) -> Result<Self, Self::Error> {
+        Ok(Self{ address: AccAddress::from_bech32(&src.address).unwrap()})
+    }
+}
+
+impl From<QueryAllMessagesRequest> for QueryAllMessagesRequestRaw {
+    fn from(src: QueryAllMessagesRequest) -> Self {
+        Self { address: String::from_utf8( src.address.into()).unwrap() }
+    }
+}
+
+impl Protobuf<QueryAllMessagesRequestRaw> for QueryAllMessagesRequest {}
+
+#[derive(Serialize, Deserialize, Clone, ProstMessage)]
+pub struct QueryAllMessagesResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub messages: Vec<RawMsgVal>,
+}
+
+impl Protobuf<QueryAllMessagesResponse> for QueryAllMessagesResponse {}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, ProstMessage)]
 pub struct RawMsgVal {
     #[prost(string, tag = "1")]
     pub address: String,
@@ -34,12 +70,35 @@ pub struct RawMsgVal {
     pub msg: String,
 }
 
+
+impl From<MsgVal> for RawMsgVal {
+    fn from(src: MsgVal) -> Self {
+        Self {
+            address: String::from_utf8(src.address.into()).unwrap(),
+            id: src.id,
+            msg: src.msg,
+        }
+    }
+}
+
 /// Struct that keeps message
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MsgVal {
     pub address: AccAddress,
     pub id: u64,
     pub msg: String,
+}
+
+impl Protobuf<RawMsgVal> for MsgVal {}
+
+impl From<RawMsgVal> for MsgVal {
+    fn from(src: RawMsgVal) -> Self {
+        Self {
+            address: AccAddress::from_bech32(&src.address).unwrap(),
+            id: src.id,
+            msg: src.msg,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -88,8 +147,8 @@ impl TryFrom<Any> for Message {
     fn try_from(value: Any) -> Result<Self, Self::Error> {
         match value.type_url.as_str() {
             "/st.store.v1beta1.MsgVal" => {
-                let msg = MsgSend::decode::<Bytes>(value.value.clone().into())?;
-                Ok(Message::Send(msg))
+                let msg = MsgVal::decode::<Bytes>(value.value.clone().into())?;
+                Ok(Message::Store(msg))
             }
             _ => Err(proto_messages::Error::DecodeGeneral(
                 "message type not recognized".into(),

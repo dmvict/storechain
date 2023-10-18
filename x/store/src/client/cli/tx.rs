@@ -1,12 +1,9 @@
 use anyhow::{Ok, Result};
 use clap::{Args, Subcommand};
 
-use proto_messages::cosmos::{
-    bank::v1beta1::MsgSend,
-    base::v1beta1::{Coin, SendCoins},
-};
 use proto_types::AccAddress;
 
+use crate::message::MsgVal;
 use crate::Message as StoreMessage;
 
 #[derive(Args, Debug)]
@@ -25,9 +22,9 @@ pub enum MessageCommands {
     },
 }
 
-pub fn run_messages_tx_command(args: Cli, from_address: AccAddress) -> Result<StoreMessage> {
+pub fn run_messages_tx_command(args: Cli, _from_address: AccAddress) -> Result<StoreMessage> {
     match args.command {
-        BankCommands::Store { address, id, msg } => {
+        MessageCommands::Store { address, id, msg } => {
             Ok(StoreMessage::Store(MsgVal { address, id, msg }))
         }
     }
