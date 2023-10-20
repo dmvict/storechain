@@ -8,12 +8,12 @@ test:
 	cargo test
 
 install:
-	cargo install --path ./gaia-rs
+	cargo install --path ./storechain
 
 init:
-	./gaia-rs/scripts/init.sh
+	./storechain/scripts/init.sh
 
 tendermint-start:
-	tendermint start --home ~/.gaia-rs
+	tendermint start --home ~/.storechain
 
 .PHONY: run run-debug test install init tendermint-start

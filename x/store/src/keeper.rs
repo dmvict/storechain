@@ -42,18 +42,15 @@ impl<SK: StoreKey> Keeper<SK> {
     ) -> Result<(), AppError> {
         // Make store key
         let mut store_key = MSG_DATA_KEY.to_vec();
-        store_key.append(&mut msg.msg.as_bytes().to_vec());
-
         let addr: Vec<u8> = msg.address.clone().into();
         store_key.append(&mut addr.to_vec());
 
-        //
         let keycount = self.open_process_count(ctx, msg.msg.clone());
 
         if msg.id <= (keycount - 1) {
             let tlcs_store = ctx.get_mutable_kv_store(&self.store_key);
             let chain_data: RawMsgVal = msg.to_owned().into();
-            tlcs_store.set(store_key.into(), chain_data.encode_to_vec());
+            tlcs_store.set(store_key, chain_data.encode_to_vec());
         } else {
             return Err(AppError::InvalidRequest(
                 "Can't contribute data without existing keypair request.".into(),
@@ -70,8 +67,6 @@ impl<SK: StoreKey> Keeper<SK> {
     ) -> Result<(), AppError> {
         // Make store key
         let mut store_key = MSG_DATA_KEY.to_vec();
-        store_key.append(&mut msg.msg.as_bytes().to_vec());
-
         let addr: Vec<u8> = msg.address.clone().into();
         store_key.append(&mut addr.to_vec());
 

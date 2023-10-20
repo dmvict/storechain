@@ -6,12 +6,14 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum Message {
+    Bank(bank::Message),
     Msg(st::Message),
 }
 
 impl From<Message> for Any {
     fn from(msg: Message) -> Self {
         match msg {
+            Message::Bank(msg) => msg.into(),
             Message::Msg(msg) => msg.into(),
         }
     }
@@ -22,6 +24,8 @@ impl TryFrom<Any> for Message {
 
     fn try_from(value: Any) -> Result<Self, Self::Error> {
         if value.type_url.starts_with("/cosmos.bank") {
+            Ok(Message::Bank(Any::try_into(value)?))
+        } else if value.type_url.starts_with("/ts.store") {
             Ok(Message::Msg(Any::try_into(value)?))
         } else {
             Err(proto_messages::Error::DecodeGeneral(
@@ -34,12 +38,14 @@ impl TryFrom<Any> for Message {
 impl SDKMessage for Message {
     fn get_signers(&self) -> Vec<&AccAddress> {
         match self {
+            Message::Bank(msg) => msg.get_signers(),
             Message::Msg(msg) => msg.get_signers(),
         }
     }
 
     fn validate_basic(&self) -> std::result::Result<(), String> {
         match self {
+            Message::Bank(msg) => msg.validate_basic(),
             Message::Msg(msg) => msg.validate_basic(),
         }
     }

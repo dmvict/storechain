@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use bytes::Bytes;
 use ibc_proto::{google::protobuf::Any, protobuf::Protobuf};
 use prost::Message as ProstMessage;
@@ -15,7 +17,6 @@ pub struct RawMsgKeyPair {
     #[prost(string, tag = "4")]
     pub private_key: String,
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct MsgKeyPair {
@@ -40,13 +41,17 @@ pub struct QueryAllMessagesRequest {
 impl TryFrom<QueryAllMessagesRequestRaw> for QueryAllMessagesRequest {
     type Error = String;
     fn try_from(src: QueryAllMessagesRequestRaw) -> Result<Self, Self::Error> {
-        Ok(Self{ address: AccAddress::from_bech32(&src.address).unwrap()})
+        Ok(Self {
+            address: AccAddress::from_str(&src.address).unwrap(),
+        })
     }
 }
 
 impl From<QueryAllMessagesRequest> for QueryAllMessagesRequestRaw {
     fn from(src: QueryAllMessagesRequest) -> Self {
-        Self { address: String::from_utf8( src.address.into()).unwrap() }
+        Self {
+            address: src.address.into(),
+        }
     }
 }
 
@@ -69,7 +74,6 @@ pub struct RawMsgVal {
     #[prost(string, tag = "3")]
     pub msg: String,
 }
-
 
 impl From<MsgVal> for RawMsgVal {
     fn from(src: MsgVal) -> Self {
@@ -113,8 +117,8 @@ pub enum Message {
 impl proto_messages::cosmos::tx::v1beta1::Message for Message {
     fn get_signers(&self) -> Vec<&AccAddress> {
         match &self {
-            Message::Store(msg) => return vec![&msg.address],
-            Message::Get(msg) => return vec![&msg.address],
+            Message::Store(_msg) => vec![],
+            Message::Get(_msg) => vec![],
         }
     }
 

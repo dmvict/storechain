@@ -56,7 +56,11 @@ impl gears::baseapp::Handler<Message, StoreChainStoreKey, GenesisState> for Hand
         msg: &Message,
     ) -> Result<(), AppError> {
         match msg {
-            Message::Msg(msg) => self.store_handler.handle(ctx, msg),
+            Message::Bank(msg) => self.bank_handler.handle(ctx, msg),
+            Message::Msg(msg) => {
+                println!("{:?}", msg);
+                self.store_handler.handle(ctx, msg)
+            }
         }
     }
 
