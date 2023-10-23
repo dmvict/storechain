@@ -44,10 +44,13 @@ impl<SK: StoreKey> Keeper<SK> {
         let mut store_key = MSG_DATA_KEY.to_vec();
         let addr: Vec<u8> = msg.address.clone().into();
         store_key.append(&mut addr.to_vec());
+        let msgv: Vec<u8> = msg.msg.clone().into();
+        store_key.append(&mut msgv.to_vec());
 
-        let keycount = self.open_process_count(ctx, msg.msg.clone());
+        // TODO: may be extra check for now
+        let keycount = self.open_process_count(ctx, msg.address.clone().into());
 
-        if msg.id <= (keycount - 1) {
+        if keycount == 0 || msg.id <= (keycount - 1) {
             let tlcs_store = ctx.get_mutable_kv_store(&self.store_key);
             let chain_data: RawMsgVal = msg.to_owned().into();
             tlcs_store.set(store_key, chain_data.encode_to_vec());

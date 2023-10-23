@@ -78,7 +78,7 @@ pub struct RawMsgVal {
 impl From<MsgVal> for RawMsgVal {
     fn from(src: MsgVal) -> Self {
         Self {
-            address: String::from_utf8(src.address.into()).unwrap(),
+            address: src.address.into(),
             id: src.id,
             msg: src.msg,
         }
@@ -117,8 +117,8 @@ pub enum Message {
 impl proto_messages::cosmos::tx::v1beta1::Message for Message {
     fn get_signers(&self) -> Vec<&AccAddress> {
         match &self {
-            Message::Store(_msg) => vec![],
-            Message::Get(_msg) => vec![],
+            Message::Store(msg) => vec![&msg.address],
+            Message::Get(msg) => vec![&msg.address],
         }
     }
 

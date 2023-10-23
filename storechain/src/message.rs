@@ -25,7 +25,7 @@ impl TryFrom<Any> for Message {
     fn try_from(value: Any) -> Result<Self, Self::Error> {
         if value.type_url.starts_with("/cosmos.bank") {
             Ok(Message::Bank(Any::try_into(value)?))
-        } else if value.type_url.starts_with("/ts.store") {
+        } else if value.type_url.starts_with("/st.store") {
             Ok(Message::Msg(Any::try_into(value)?))
         } else {
             Err(proto_messages::Error::DecodeGeneral(
