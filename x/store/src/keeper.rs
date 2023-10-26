@@ -9,7 +9,7 @@ use gears::{
 use prost::Message;
 use store::StoreKey;
 
-use crate::message::{MsgVal, QueryAllMessagesResponse, RawMsgKeyPair, RawMsgVal};
+use crate::proto::{MsgVal, QueryAllMessagesResponse, RawMsgKeyPair, RawMsgVal};
 
 const MSG_DATA_KEY: [u8; 1] = [0];
 const KEYPAIR_DATA_KEY: [u8; 1] = [1];

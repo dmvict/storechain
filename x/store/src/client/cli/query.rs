@@ -1,11 +1,11 @@
 use anyhow::Result;
 use clap::{Args, Subcommand};
 
-use crate::message::{QueryAllMessagesRequest, QueryAllMessagesResponse};
+use crate::proto::{QueryAllMessagesRequest, QueryAllMessagesResponse};
 use gears::client::query::run_query;
+use ibc_proto::protobuf::Protobuf;
 use proto_types::AccAddress;
 use tendermint_informal::block::Height;
-use ibc_proto::protobuf::Protobuf;
 
 #[derive(Args, Debug)]
 pub struct QueryCli {
@@ -29,9 +29,7 @@ pub fn run_messages_query_command(
 ) -> Result<String> {
     match args.command {
         MessageCommands::Messages { address } => {
-            let query = QueryAllMessagesRequest {
-                address,
-            };
+            let query = QueryAllMessagesRequest { address };
 
             let res = run_query::<QueryAllMessagesResponse, QueryAllMessagesResponse>(
                 query.encode_vec(),

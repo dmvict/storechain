@@ -3,7 +3,7 @@ use clap::{Args, Subcommand};
 
 use proto_types::AccAddress;
 
-use crate::message::MsgVal;
+use crate::proto::MsgVal;
 use crate::Message as StoreMessage;
 
 #[derive(Args, Debug)]
