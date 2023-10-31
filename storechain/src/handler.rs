@@ -95,7 +95,7 @@ impl gears::baseapp::Handler<Message, StoreChainStoreKey, GenesisState> for Hand
         genesis_state: &mut GenesisState,
         address: AccAddress,
         coins: SendCoins,
-    ) -> Result<(), AppError> {
+    ) -> Result<(), AppError> QueryKVStore{
         self.auth_handler
             .handle_add_genesis_account(&mut genesis_state.auth, address.clone())?;
         self.bank_handler

@@ -20,12 +20,22 @@ pub enum MessageCommands {
         address: AccAddress,
         msg: String,
     },
+    Link {
+        wallet: AccAddress,
+        name: String,
+        phone: String,
+        email: String,
+        address: Option<String>,
+    },
 }
 
 pub fn run_messages_tx_command(args: Cli, _from_address: AccAddress) -> Result<StoreMessage> {
     match args.command {
         MessageCommands::Store { address, id, msg } => {
             Ok(StoreMessage::Store(MsgVal { address, id, msg }))
+        }
+        MessageCommands::Link { wallet, name, phone, email, address } => {
+            Ok(StoreMessage::Link(crate::AccountData { wallet_address: wallet, name, email, phone, address, id: 0 }))
         }
     }
 }

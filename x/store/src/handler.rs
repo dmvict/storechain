@@ -1,10 +1,11 @@
 use database::Database;
 use gears::{error::AppError, types::context::TxContext};
+use ibc_proto::protobuf::Protobuf;
 use prost::Message as ProstMessage;
 use store::StoreKey;
 use tendermint_proto::abci::RequestBeginBlock;
 
-use crate::{Keeper, Message};
+use crate::{proto::QueryByAccAddressRequest, Keeper, Message};
 
 #[derive(Debug, Clone)]
 pub struct Handler<SK: StoreKey> {
@@ -23,6 +24,7 @@ impl<SK: StoreKey> Handler<SK> {
     ) -> Result<(), AppError> {
         match msg {
             Message::Store(msg) => self.keeper.store_message(ctx, msg),
+            Message::Link(msg) => self.keeper.store_metadata(ctx, msg),
             Message::Get(msg) => self.keeper.get_message(ctx, msg),
         }
     }
@@ -51,7 +53,19 @@ impl<SK: StoreKey> Handler<SK> {
     ) -> std::result::Result<bytes::Bytes, AppError> {
         match query.path.as_str() {
             "/st.store.v1beta1.Query/GetAllMessages" => {
-                Ok(self.keeper.query_all_messages(&ctx).encode_to_vec().into())
+                Ok(self.keeper.query_all_messages(ctx).encode_to_vec().into())
+            }
+            "/st.store.v1beta1.Query/GetLinkedData" => {
+                let data = query.data.clone();
+                let req = QueryByAccAddressRequest::decode(data)?;
+
+                if let Some(data) = self.keeper.query_linked_data(ctx, req) {
+                    Ok(data.encode_to_vec().into())
+                } else {
+                    Err(AppError::InvalidRequest(
+                        "the account does not exists".into(),
+                    ))
+                }
             }
             _ => Err(AppError::InvalidRequest("query path not found".into())),
         }
