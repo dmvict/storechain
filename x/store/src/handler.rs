@@ -5,16 +5,17 @@ use prost::Message as ProstMessage;
 use store::StoreKey;
 use tendermint_proto::abci::RequestBeginBlock;
 
-use crate::{proto::QueryByAccAddressRequest, Keeper, Message};
+use crate::{proto::QueryByAccAddressRequest, Config, Keeper, Message};
 
 #[derive(Debug, Clone)]
 pub struct Handler<SK: StoreKey> {
     keeper: Keeper<SK>,
+    config: Config,
 }
 
 impl<SK: StoreKey> Handler<SK> {
-    pub fn new(keeper: Keeper<SK>) -> Self {
-        Handler { keeper }
+    pub fn new(keeper: Keeper<SK>, config: Config) -> Self {
+        Handler { keeper, config }
     }
 
     pub fn handle<DB: Database>(
@@ -23,9 +24,8 @@ impl<SK: StoreKey> Handler<SK> {
         msg: &Message,
     ) -> Result<(), AppError> {
         match msg {
-            Message::Store(msg) => self.keeper.store_message(ctx, msg),
+            Message::Store(msg) => self.keeper.store_message(ctx, msg, &self.config),
             Message::Link(msg) => self.keeper.store_metadata(ctx, msg),
-            Message::Get(msg) => self.keeper.get_message(ctx, msg),
         }
     }
 
@@ -52,8 +52,15 @@ impl<SK: StoreKey> Handler<SK> {
         query: tendermint_proto::abci::RequestQuery,
     ) -> std::result::Result<bytes::Bytes, AppError> {
         match query.path.as_str() {
-            "/st.store.v1beta1.Query/GetAllMessages" => {
-                Ok(self.keeper.query_all_messages(ctx).encode_to_vec().into())
+            "/st.store.v1beta1.Query/GetAllMessagesByAddr" => {
+                let data = query.data.clone();
+                let req = QueryByAccAddressRequest::decode(data)?;
+
+                Ok(self
+                    .keeper
+                    .query_all_messages_by_addr(ctx, req, &self.config)
+                    .encode_to_vec()
+                    .into())
             }
             "/st.store.v1beta1.Query/GetLinkedData" => {
                 let data = query.data.clone();

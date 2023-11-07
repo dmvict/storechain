@@ -11,8 +11,6 @@ pub enum Message {
     Store(MsgVal),
     #[serde(rename = "/st.store.v1beta1.AccountData")]
     Link(AccountData),
-    // TODO: design request
-    Get(MsgVal),
 }
 
 impl proto_messages::cosmos::tx::v1beta1::Message for Message {
@@ -20,7 +18,6 @@ impl proto_messages::cosmos::tx::v1beta1::Message for Message {
         match &self {
             Message::Store(msg) => vec![&msg.address],
             Message::Link(msg) => vec![&msg.wallet_address],
-            Message::Get(msg) => vec![&msg.address],
         }
     }
 
@@ -28,7 +25,6 @@ impl proto_messages::cosmos::tx::v1beta1::Message for Message {
         match &self {
             Message::Store(_) => Ok(()),
             Message::Link(_) => Ok(()),
-            Message::Get(_) => Ok(()),
         }
     }
 }
@@ -42,10 +38,6 @@ impl From<Message> for Any {
             },
             Message::Link(msg) => Any {
                 type_url: "/st.store.v1beta1.AccountData".to_string(),
-                value: msg.encode_vec(),
-            },
-            Message::Get(msg) => Any {
-                type_url: "/st.store.v1beta1.MsgVal".to_string(),
                 value: msg.encode_vec(),
             },
         }

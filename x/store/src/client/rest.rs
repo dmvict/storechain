@@ -42,7 +42,7 @@ pub async fn get_messages<
 
     let request = RequestQuery {
         data: req.encode_vec().into(),
-        path: "/st.store.v1beta1.Query/GetAllMessages".into(),
+        path: "/st.store.v1beta1.Query/GetAllMessagesByAddr".into(),
         height: 0,
         prove: false,
     };

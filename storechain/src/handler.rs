@@ -4,6 +4,7 @@ use gears::{
 };
 use proto_messages::cosmos::base::v1beta1::SendCoins;
 use proto_types::AccAddress;
+use st::Config;
 use tendermint_proto::abci::{RequestBeginBlock, RequestQuery};
 
 use database::Database;
@@ -23,7 +24,7 @@ pub struct Handler {
 }
 
 impl Handler {
-    pub fn new() -> Handler {
+    pub fn new(config: Config) -> Handler {
         let params_keeper = ParamsKeeper::new(StoreChainStoreKey::Params);
 
         let auth_keeper = auth::Keeper::new(
@@ -44,7 +45,7 @@ impl Handler {
         Handler {
             bank_handler: bank::Handler::new(bank_keeper),
             auth_handler: auth::Handler::new(auth_keeper),
-            store_handler: st::Handler::new(store_keeper),
+            store_handler: st::Handler::new(store_keeper, config),
         }
     }
 }
@@ -95,7 +96,7 @@ impl gears::baseapp::Handler<Message, StoreChainStoreKey, GenesisState> for Hand
         genesis_state: &mut GenesisState,
         address: AccAddress,
         coins: SendCoins,
-    ) -> Result<(), AppError> QueryKVStore{
+    ) -> Result<(), AppError> {
         self.auth_handler
             .handle_add_genesis_account(&mut genesis_state.auth, address.clone())?;
         self.bank_handler

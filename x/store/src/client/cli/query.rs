@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{Args, Subcommand};
 
-use crate::proto::{QueryByAccAddressRequest, QueryLinkedDataResponse, QueryAllMessagesResponse};
+use crate::proto::{QueryAllMessagesResponse, QueryByAccAddressRequest, QueryLinkedDataResponse};
 use gears::client::query::run_query;
 use ibc_proto::protobuf::Protobuf;
 use proto_types::AccAddress;
@@ -37,7 +37,7 @@ pub fn run_messages_query_command(
 
             let res = run_query::<QueryAllMessagesResponse, QueryAllMessagesResponse>(
                 query.encode_vec(),
-                "/st.store.v1beta1.Query/GetAllMessages".into(),
+                "/st.store.v1beta1.Query/GetAllMessagesByAddr".into(),
                 node,
                 height,
             )?;

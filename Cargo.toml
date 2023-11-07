@@ -1,5 +1,6 @@
 [workspace]
 members = [ "storechain", "x/store" ]
+resolver = "2"
 
 [workspace.dependencies]
 auth = { git = "https://github.com/rumos-io/gears", rev = "9019b276e71c34a7be49859eff84fac1555ed9a9" }
@@ -10,13 +11,6 @@ proto-messages = { git = "https://github.com/rumos-io/gears", rev = "9019b276e71
 proto-types = { git = "https://github.com/rumos-io/gears", rev = "9019b276e71c34a7be49859eff84fac1555ed9a9" }
 store = { git = "https://github.com/rumos-io/gears", rev = "9019b276e71c34a7be49859eff84fac1555ed9a9" }
 ibc-proto = { git = "https://github.com/joneskm/ibc-proto-rs" }
-# auth = { git = "https://github.com/dmvict/gears", branch = "alt_gears" }
-# bank = { git = "https://github.com/dmvict/gears", branch = "alt_gears" }
-# database = { git = "https://github.com/dmvict/gears", branch = "alt_gears" }
-# gears = { git = "https://github.com/dmvict/gears", branch = "alt_gears" }
-# proto-messages = { git = "https://github.com/dmvict/gears", branch = "alt_gears" }
-# proto-types = { git = "https://github.com/dmvict/gears", branch = "alt_gears" }
-# store = { git = "https://github.com/dmvict/gears", branch = "alt_gears" }
-#
-# ibc-proto = { git = "https://github.com/joneskm/ibc-proto-rs" }
 
+st = { version = "*", path = "./x/store/" }
+sqlx = { version = "~0.7.2", features = [ "runtime-async-std" ] }

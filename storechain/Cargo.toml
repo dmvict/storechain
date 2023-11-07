@@ -26,7 +26,8 @@ anyhow = "1.0.70"
 strum = "0.24.1"
 strum_macros = "0.24"
 tendermint-informal = { package = "tendermint", git = "https://github.com/joneskm/tendermint-rs" }
-st = { path = "../x/store" }
-toml = "0.8.0"
+st = { workspace = true }
+toml = "~0.8.0"
+sqlx = { workspace = true }
 
 [dev-dependencies]
