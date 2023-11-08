@@ -1,0 +1,26 @@
+version : '3'
+services :
+  app :
+    build :
+     context : .
+     args :
+       USER : test
+       USER_UID : ${UID:-1000}
+       USER_GID : ${GID:-1000}
+    network_mode: "host"
+    depends_on:
+      - db
+    working_dir: /home/test/work/
+    user : ${UID:-1000}:${GID:-1000}
+    container_name : st
+    image : st
+    volumes :
+      - ./:/home/test/work
+    tty : true
+  db:
+    image: postgres:16.0
+    network_mode: "host"
+    environment:
+      POSTGRES_USER: pg
+      POSTGRES_PASSWORD: "pg"
+      POSTGRES_DB: pg
