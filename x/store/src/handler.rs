@@ -25,25 +25,16 @@ impl<SK: StoreKey> Handler<SK> {
     ) -> Result<(), AppError> {
         match msg {
             Message::Store(msg) => self.keeper.store_message(ctx, msg, &self.config),
-            Message::Link(msg) => self.keeper.store_metadata(ctx, msg),
+            Message::Link(msg) => self.keeper.store_metadata(ctx, msg, &self.config),
         }
     }
 
     pub fn handle_begin_block<DB: Database>(
         &self,
-        ctx: &mut TxContext<DB, SK>,
+        _ctx: &mut TxContext<DB, SK>,
         _request: RequestBeginBlock,
     ) {
-        let _contribution_threshold: u32 = 2;
-        let _block_time = ctx.get_header().time.unix_timestamp();
-
-        let (_need_pub_keys, _need_secret_keys) = self.keeper.get_empty_keypairs(ctx);
-
-        // TODO:
-        // self.keeper
-        //     .make_public_keys(ctx, need_pub_keys, block_time, contribution_threshold);
-        //
-        // self.keeper.make_secret_keys(ctx, need_secret_keys);
+        // TODO: implement genesis func
     }
 
     pub fn handle_query<DB: Database>(
@@ -66,7 +57,7 @@ impl<SK: StoreKey> Handler<SK> {
                 let data = query.data.clone();
                 let req = QueryByAccAddressRequest::decode(data)?;
 
-                if let Some(data) = self.keeper.query_linked_data(ctx, req) {
+                if let Some(data) = self.keeper.query_linked_data(ctx, req, &self.config) {
                     Ok(data.encode_to_vec().into())
                 } else {
                     Err(AppError::InvalidRequest(

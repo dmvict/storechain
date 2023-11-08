@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use bytes::Bytes;
 use database::Database;
 use gears::{
@@ -11,13 +9,14 @@ use proto_types::AccAddress;
 use store::StoreKey;
 
 use crate::{
-    connect, AccountData, Config, MsgVal, QueryAllMessagesResponse, QueryByAccAddressRequest,
-    QueryLinkedDataResponse, RawAccountData, RawMsgKeyPair, RawMsgVal,
+    AccountData, Config, MsgVal, QueryAllMessagesResponse, QueryByAccAddressRequest,
+    QueryLinkedDataResponse,
 };
 
+use crate::{RawAccountData, RawMsgVal};
+
 const MSG_DATA_KEY: [u8; 1] = [0];
-const KEYPAIR_DATA_KEY: [u8; 1] = [1];
-const METADATA_DATA_KEY: [u8; 1] = [2];
+const METADATA_DATA_KEY: [u8; 1] = [1];
 
 #[derive(Debug, Clone)]
 pub struct Keeper<SK: StoreKey> {
@@ -29,30 +28,15 @@ impl<SK: StoreKey> Keeper<SK> {
         Keeper { store_key }
     }
 
+    /// Store message in the chain.
     pub fn store_message<T: Database>(
         &self,
         ctx: &mut TxContext<T, SK>,
         msg: &MsgVal,
         config: &Config,
     ) -> Result<(), AppError> {
-        // Make store key
-        let mut store_key = MSG_DATA_KEY.to_vec();
-        let addr: Vec<u8> = msg.address.clone().into();
-        store_key.append(&mut addr.to_vec());
-        let msgv: Vec<u8> = msg.msg.clone().into();
-        store_key.append(&mut msgv.to_vec());
-
-        let metadata = self.tx_linked_data(ctx, &msg.address);
-
-        if metadata.is_some() {
-            // write into postgres
-            let pg_pool = connect(&config.pg_url).unwrap();
-            let _id = async_std::task::block_on(crate::add_msg(&pg_pool, msg));
-            println!("{:?}", _id);
-
-            let msg_store = ctx.get_mutable_kv_store(&self.store_key);
-            let chain_data: RawMsgVal = msg.to_owned().into();
-            msg_store.set(store_key, chain_data.encode_to_vec());
+        if self.tx_linked_data(ctx, &msg.address, config).is_some() {
+            self.store_message_db(ctx, msg, config)?;
         } else {
             return Err(AppError::InvalidRequest(
                 "Can't contribute data without existing account.".into(),
@@ -62,39 +46,31 @@ impl<SK: StoreKey> Keeper<SK> {
         Ok(())
     }
 
-    pub fn get_empty_keypairs<T: Database>(
+    /// Store message in the chain.
+    fn store_message_db<T: Database>(
         &self,
         ctx: &mut TxContext<T, SK>,
-    ) -> (
-        HashMap<Vec<u8>, RawMsgKeyPair>,
-        HashMap<Vec<u8>, RawMsgKeyPair>,
-    ) {
-        let mut need_pub_key: HashMap<Vec<u8>, RawMsgKeyPair> = HashMap::new();
-        let mut need_priv_key: HashMap<Vec<u8>, RawMsgKeyPair> = HashMap::new();
-
-        let msg_store = ctx.get_kv_store(&self.store_key);
-        let store_key = KEYPAIR_DATA_KEY.to_vec();
-        let prefix_store = msg_store.get_immutable_prefix_store(store_key);
-        let keypairs = prefix_store.range(..);
-
-        for (index, keypair) in keypairs {
-            let the_keys: RawMsgKeyPair = RawMsgKeyPair::decode::<Bytes>(keypair.into())
-                .expect("invalid data in database - possible database corruption");
-            if the_keys.public_key.is_empty() {
-                need_pub_key.insert(index, the_keys);
-            } else if the_keys.private_key.is_empty() {
-                need_priv_key.insert(index, the_keys);
-            }
-        }
-
-        (need_pub_key, need_priv_key)
+        msg: &MsgVal,
+        _config: &Config,
+    ) -> Result<(), AppError> {
+        // Make store key
+        let mut store_key = MSG_DATA_KEY.to_vec();
+        let addr: Vec<u8> = msg.address.clone().into();
+        store_key.append(&mut addr.to_vec());
+        let msgv: Vec<u8> = msg.msg.clone().into();
+        store_key.append(&mut msgv.to_vec());
+        let msg_store = ctx.get_mutable_kv_store(&self.store_key);
+        let chain_data: RawMsgVal = msg.to_owned().into();
+        msg_store.set(store_key, chain_data.encode_to_vec());
+        Ok(())
     }
 
+    /// Query messages owned by a user from db.
     pub fn query_all_messages_by_addr<T: Database>(
         &self,
         ctx: &QueryContext<T, SK>,
         req: QueryByAccAddressRequest,
-        config: &Config,
+        _config: &Config,
     ) -> QueryAllMessagesResponse {
         let mut store_key = MSG_DATA_KEY.to_vec();
         let addr: Vec<u8> = req.address.clone().into();
@@ -103,10 +79,6 @@ impl<SK: StoreKey> Keeper<SK> {
         let msg_store = ctx.get_kv_store(&self.store_key);
         let prefix_store = msg_store.get_immutable_prefix_store(store_key);
         let all_raw_data = prefix_store.range(..);
-
-        let pg_pool = connect(&config.pg_url).unwrap();
-        let _msgs = async_std::task::block_on(crate::select_msgs_by_addr(&pg_pool, &req.into()));
-        println!("{:?}", _msgs);
 
         let mut messages = vec![];
 
@@ -123,6 +95,7 @@ impl<SK: StoreKey> Keeper<SK> {
         &self,
         ctx: &mut TxContext<T, SK>,
         msg: &AccountData,
+        _config: &Config,
     ) -> Result<(), AppError> {
         // Make store key
         let mut store_key = METADATA_DATA_KEY.to_vec();
@@ -140,6 +113,7 @@ impl<SK: StoreKey> Keeper<SK> {
         &self,
         ctx: &QueryContext<T, SK>,
         req: QueryByAccAddressRequest,
+        _config: &Config,
     ) -> Option<QueryLinkedDataResponse> {
         let mut store_key = METADATA_DATA_KEY.to_vec();
         let addr: Vec<u8> = req.address.clone().into();
@@ -161,6 +135,7 @@ impl<SK: StoreKey> Keeper<SK> {
         &self,
         ctx: &TxContext<T, SK>,
         address: &AccAddress,
+        _config: &Config,
     ) -> Option<QueryLinkedDataResponse> {
         let mut store_key = METADATA_DATA_KEY.to_vec();
         let addr: Vec<u8> = address.clone().into();
