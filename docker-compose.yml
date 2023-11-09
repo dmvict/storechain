@@ -1,6 +1,10 @@
 version : '3'
 services :
   app :
+    tty : true
+    environment:
+      - DATABASE_URL=postgres://pg:pg@localhost:5432/pg
+      - CARGO_HOME=/home/test
     build :
      context : .
      args :
@@ -13,13 +17,13 @@ services :
     working_dir: /home/test/work/
     user : ${UID:-1000}:${GID:-1000}
     container_name : st
-    image : st
+    image : store
     volumes :
       - ./:/home/test/work
-    tty : true
   db:
     image: postgres:16.0
-    network_mode: "host"
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: pg
       POSTGRES_PASSWORD: "pg"
